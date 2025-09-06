@@ -50,8 +50,17 @@ class SQLiteTUI:
         while True:
             stdscr.clear()
             title = "Select Database Color"
-            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
-            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            # Draw main title "Loula's SQLite Viewer" with database color above border
+            main_title = "Loula's SQLite Viewer"
+            if self.db.db_name:
+                title_color = getattr(self, 'db_color', 3)
+            else:
+                title_color = 5  # White for no database connected
+
+            stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+            stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(2, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
             for i, (name, color_id) in enumerate(colors):
                 y = 3 + i
@@ -80,8 +89,17 @@ class SQLiteTUI:
         # Connection type selection
         stdscr.clear()
         title = "Connection Type"
-        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
-        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        # Draw main title "Loula's SQLite Viewer" with database color above border
+        main_title = "Loula's SQLite Viewer"
+        if self.db.db_name:
+            title_color = getattr(self, 'db_color', 3)
+        else:
+            title_color = 5  # White for no database connected
+
+        stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+        stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(2, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
         options = ["Connect to Saved Database", "Connect to New Database"]
         selected = 0
@@ -128,8 +146,17 @@ class SQLiteTUI:
         while True:
             stdscr.clear()
             title = "Select Saved Database"
-            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
-            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            # Draw main title "Loula's SQLite Viewer" with database color above border
+            main_title = "Loula's SQLite Viewer"
+            if self.db.db_name:
+                title_color = getattr(self, 'db_color', 3)
+            else:
+                title_color = 5  # White for no database connected
+
+            stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+            stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(2, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
             for i, db in enumerate(saved_dbs):
                 y = 3 + i
@@ -153,6 +180,7 @@ class SQLiteTUI:
             elif key == 10 or key == 13:  # Enter
                 db = saved_dbs[selected]
                 if self.db.connect(db['path'], db['name']):
+                    self.db_color = db.get('color', 3)  # Update the database color
                     self.config.set_last_connected(db)
                     stdscr.clear()
                     stdscr.addstr(1, 2, f"Connected to: {self.db.db_name}", curses.color_pair(db.get('color', 3)))
@@ -175,8 +203,17 @@ class SQLiteTUI:
         stdscr.clear()
 
         title = "Connect to New Database"
-        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
-        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        # Draw main title "Loula's SQLite Viewer" with database color above border
+        main_title = "Loula's SQLite Viewer"
+        if self.db.db_name:
+            title_color = getattr(self, 'db_color', 3)
+        else:
+            title_color = 5  # White for no database connected
+
+        stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+        stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(2, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
         stdscr.addstr(3, 2, "Database Path:", curses.color_pair(5))
         stdscr.addstr(4, 2, ">" , curses.color_pair(4))
@@ -215,6 +252,7 @@ class SQLiteTUI:
         # Connect
         if self.db.connect(path, name):
             db_info = {'path': path, 'name': name, 'color': color}
+            self.db_color = color  # Update the database color
             self.config.add_saved_database(db_info)
             self.config.set_last_connected(db_info)
 
@@ -289,13 +327,24 @@ class SQLiteTUI:
         """Split screen interface: left panel for table list, right panel for data"""
         h, w = stdscr.getmaxyx()
 
-        # Create windows for split screen
+        # Draw main title "Loula's SQLite Viewer" with database color above both panels
+        main_title = "Loula's SQLite Viewer"
+        if self.db.db_name:
+            title_color = getattr(self, 'db_color', 3)
+        else:
+            title_color = 5  # White for no database connected
+
+        stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+        stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+        stdscr.refresh()
+
+        # Create windows for split screen (starting from line 2 to leave space for title)
         left_width = max(20, w // 4)
         right_width = w - left_width - 1
 
-        # Create windows
-        left_win = curses.newwin(h, left_width, 0, 0)
-        right_win = curses.newwin(h, right_width, 0, left_width + 1)
+        # Create windows starting from line 2
+        left_win = curses.newwin(h - 2, left_width, 2, 0)
+        right_win = curses.newwin(h - 2, right_width, 2, left_width + 1)
 
         # Get tables
         tables = self.db.get_tables()
@@ -305,7 +354,7 @@ class SQLiteTUI:
         selected_table = 0
         table_page = 0
         selected_row = 0  # Track selected row in the current table
-        rows_per_page = h - 6  # Leave space for headers and instructions
+        rows_per_page = h - 8  # Leave space for headers and instructions (adjusted for title)
         table_selected = False  # Track if a table has been selected
 
         while True:
@@ -318,16 +367,16 @@ class SQLiteTUI:
             left_win.addstr(1, 1, "Tables", curses.A_BOLD | curses.color_pair(2))
 
             for i, table in enumerate(tables):
-                if i >= h - 4:  # Leave space for instructions
+                if i >= h - 6:  # Leave space for instructions (adjusted for title)
                     break
-                y = 3 + i
+                y = 2 + i  # Start table list right after the title
                 if i == selected_table:
                     left_win.addstr(y, 1, f"> {table}", curses.A_REVERSE | curses.color_pair(4))
                 else:
                     left_win.addstr(y, 1, f"  {table}", curses.color_pair(5))
 
-            left_win.addstr(h - 2, 1, "↑↓ select table" if not table_selected else "Table selected", curses.color_pair(6))
-            left_win.addstr(h - 1, 1, "Enter select" if not table_selected else "Esc back", curses.color_pair(6))
+            left_win.addstr(h - 4, 1, "↑↓ select table" if not table_selected else "Table selected", curses.color_pair(6))
+            left_win.addstr(h - 3, 1, "Enter select" if not table_selected else "Esc back", curses.color_pair(6))
 
             # Draw right panel (table data)
             if table_selected:
@@ -361,7 +410,7 @@ class SQLiteTUI:
                             # Display data rows
                             for i, row_str in enumerate(formatted_rows):
                                 y = data_start_y + i
-                                if y >= h - 4:  # Leave space for instructions
+                                if y >= h - 6:  # Leave space for instructions (adjusted for title)
                                     break
                                 if i == selected_row:
                                     right_win.addstr(y, 1, f"> {row_str}", curses.A_REVERSE | curses.color_pair(4))
@@ -372,7 +421,7 @@ class SQLiteTUI:
                             data_start_y = 3
                             for i, row in enumerate(page_data):
                                 y = data_start_y + i
-                                if y >= h - 4:
+                                if y >= h - 6:
                                     break
                                 row_str = " | ".join(str(cell) for cell in row)
                                 if len(row_str) > right_width - 4:
@@ -390,7 +439,7 @@ class SQLiteTUI:
                     total_pages = (len(data) + rows_per_page - 1) // rows_per_page
                     if total_pages > 1:
                         page_info = f"Page {table_page + 1}/{total_pages} ({len(data)} rows)"
-                        right_win.addstr(h - 3, 1, page_info, curses.color_pair(6))
+                        right_win.addstr(h - 5, 1, page_info, curses.color_pair(6))
 
                     # Record position indicator
                     current_page_data = data[start_idx:end_idx]
@@ -398,7 +447,7 @@ class SQLiteTUI:
                         total_records = len(data)
                         current_record_global = start_idx + selected_row + 1  # 1-based indexing
                         record_info = f"Record {current_record_global} of {total_records}"
-                        right_win.addstr(h - 4, 1, record_info, curses.color_pair(6))
+                        right_win.addstr(h - 6, 1, record_info, curses.color_pair(6))
                 else:
                     right_win.addstr(3, 1, "No data in table", curses.color_pair(7))
             else:
@@ -410,11 +459,11 @@ class SQLiteTUI:
 
             # Instructions
             if table_selected:
-                right_win.addstr(h - 2, 1, "↑↓ select record", curses.color_pair(6))
-                right_win.addstr(h - 1, 1, "Enter view, ←→ page, Esc back", curses.color_pair(6))
+                right_win.addstr(h - 4, 1, "↑↓ select record", curses.color_pair(6))
+                right_win.addstr(h - 3, 1, "Enter view, ←→ page, Esc back", curses.color_pair(6))
             else:
-                right_win.addstr(h - 2, 1, "Select a table first", curses.color_pair(6))
-                right_win.addstr(h - 1, 1, "", curses.color_pair(6))
+                right_win.addstr(h - 4, 1, "Select a table first", curses.color_pair(6))
+                right_win.addstr(h - 3, 1, "", curses.color_pair(6))
 
             # Refresh windows
             left_win.refresh()
@@ -471,8 +520,17 @@ class SQLiteTUI:
 
         # Title
         title = f"Record Details - {table_name}"
-        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
-        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        # Draw main title "Loula's SQLite Viewer" with database color above border
+        main_title = "Loula's SQLite Viewer"
+        if self.db.db_name:
+            title_color = getattr(self, 'db_color', 3)
+        else:
+            title_color = 5  # White for no database connected
+
+        stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+        stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(2, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
         if schema and record:
             # Display each field with its value
@@ -533,13 +591,22 @@ class SQLiteTUI:
         while True:
             stdscr.clear()
             title = "SQL Tools & Queries"
-            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
-            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            # Draw main title "Loula's SQLite Viewer" with database color above border
+            main_title = "Loula's SQLite Viewer"
+            if self.db.db_name:
+                title_color = getattr(self, 'db_color', 3)
+            else:
+                title_color = 5  # White for no database connected
+
+            stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+            stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(2, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
             # Show current database
             if self.db.db_name:
                 db_status = f"Database: {self.db.db_name}"
-                stdscr.addstr(2, 0, db_status, curses.color_pair(getattr(self, 'db_color', 3)))
+                stdscr.addstr(3, 0, db_status, curses.color_pair(getattr(self, 'db_color', 3)))
 
             # Display quick tools
             for i, tool in enumerate(quick_tools):
@@ -932,22 +999,32 @@ class SQLiteTUI:
         stdscr.clear()
         h, w = stdscr.getmaxyx()
 
-        # Draw title
-        title_str = f" Loula's SQLite Viewer - {title} "
-        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
-        stdscr.addstr(1, (w - len(title_str)) // 2, title_str, curses.A_BOLD | curses.color_pair(2))
+        # Draw main title "Loula's SQLite Viewer" with database color above border
+        main_title = "Loula's SQLite Viewer"
+        if self.db.db_name:
+            title_color = getattr(self, 'db_color', 3)
+        else:
+            title_color = 5  # White for no database connected
+
+        stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+
+        # Draw border
+        stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+
+        # Draw page title
+        stdscr.addstr(2, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
         # Draw database status
         if self.db.db_name:
             status = f"Database: {self.db.db_name}"
-            stdscr.addstr(2, 0, status, curses.color_pair(getattr(self, 'db_color', 3)))
+            stdscr.addstr(3, 0, status, curses.color_pair(getattr(self, 'db_color', 3)))
         else:
             status = "Database: None"
-            stdscr.addstr(2, 0, status, curses.color_pair(3))
+            stdscr.addstr(3, 0, status, curses.color_pair(3))
 
-        # Draw menu options
+        # Draw menu options (shifted down by 1 line)
         for i, option in enumerate(options):
-            y = 4 + i
+            y = 5 + i
             if y >= h - 2:
                 break
             if i == selected:
@@ -1296,8 +1373,17 @@ class SQLiteTUI:
 
         stdscr.clear()
         title = "Custom SQL Query"
-        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
-        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        # Draw main title "Loula's SQLite Viewer" with database color above border
+        main_title = "Loula's SQLite Viewer"
+        if self.db.db_name:
+            title_color = getattr(self, 'db_color', 3)
+        else:
+            title_color = 5  # White for no database connected
+
+        stdscr.addstr(0, (w - len(main_title)) // 2, main_title, curses.A_BOLD | curses.color_pair(title_color))
+        stdscr.addstr(1, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(2, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
         stdscr.addstr(3, 2, "Enter SQL query:", curses.color_pair(5))
         stdscr.addstr(4, 2, ">" , curses.color_pair(4))
