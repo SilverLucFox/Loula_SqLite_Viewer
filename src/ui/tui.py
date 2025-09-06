@@ -97,6 +97,46 @@ class SQLiteTUI:
     def format_table_data(self, data, schema, max_width):
         return self.ui.format_table_data(data, schema, max_width)
 
+    def tools_menu(self, stdscr):
+        """Tools submenu"""
+        tools_options = [
+            "Insert Record",
+            "Update Record",
+            "Delete Record",
+            "Create Table",
+            "Drop Table",
+            "View Table Structure",
+            "Custom SQL Query",
+            "Back to Main Menu"
+        ]
+        selected = 0
+        while True:
+            self.draw_menu(stdscr, "Tools Menu", tools_options, selected)
+            key = stdscr.getch()
+            if key == curses.KEY_UP:
+                selected = (selected - 1) % len(tools_options)
+            elif key == curses.KEY_DOWN:
+                selected = (selected + 1) % len(tools_options)
+            elif key == 10 or key == 13:  # Enter
+                if selected == 0:
+                    self.insert_record_tool(stdscr)
+                elif selected == 1:
+                    self.update_record_tool(stdscr)
+                elif selected == 2:
+                    self.delete_record_tool(stdscr)
+                elif selected == 3:
+                    self.create_table_tool(stdscr)
+                elif selected == 4:
+                    self.drop_table_tool(stdscr)
+                elif selected == 5:
+                    self.view_table_structure_tool(stdscr)
+                elif selected == 6:
+                    self.custom_sql_tool(stdscr)
+                elif selected == 7:
+                    break
+            elif key == ord('q'):
+                break
+
     def main_loop(self, stdscr):
         """Main TUI loop"""
         # Initialize colors
@@ -116,6 +156,7 @@ class SQLiteTUI:
             "Connect to Database",
             "Browse Tables",
             "Execute SQL",
+            "Tools",
             "Disconnect",
             "Quit"
         ]
@@ -137,9 +178,11 @@ class SQLiteTUI:
                         self.split_screen_table_browser(stdscr)
                     elif self.selected_option == 2:  # Execute SQL
                         self.sql_input_screen(stdscr)
-                    elif self.selected_option == 3:  # Disconnect
+                    elif self.selected_option == 3:  # Tools
+                        self.tools_menu(stdscr)
+                    elif self.selected_option == 4:  # Disconnect
                         self.db.disconnect()
-                    elif self.selected_option == 4:  # Quit
+                    elif self.selected_option == 5:  # Quit
                         break
                 elif key == ord('q'):
                     break
