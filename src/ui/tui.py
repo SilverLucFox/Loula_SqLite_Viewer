@@ -156,7 +156,7 @@ class SQLiteTUI:
             "Connect to Database",
             "Browse Tables",
             "Execute SQL",
-            "Tools",
+            "Tools (not working)",
             "Disconnect",
             "Quit"
         ]
