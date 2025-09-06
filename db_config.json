@@ -17,8 +17,8 @@
     }
   ],
   "last_connected": {
-    "path": "C:\\Users\\Admin\\Desktop\\projects\\Metis\\backend\\data\\pR.db",
-    "name": "mites",
-    "color": 2
+    "path": "C:\\Users\\Admin\\Desktop\\projects\\facilway\\backend\\data\\facilway.db",
+    "name": "facilway",
+    "color": 3
   }
 }
