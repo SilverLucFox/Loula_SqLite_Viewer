@@ -1,5 +1,5 @@
 """
-Database operations for SQLite Viewer
+Database operations for Loula's SQLite Viewer
 """
 
 import sqlite3

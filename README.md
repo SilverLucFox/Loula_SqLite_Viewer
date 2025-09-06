@@ -1,4 +1,4 @@
-# Loula SQLite Viewer
+# Loula's SQLite Viewer
 
 A professional console-based SQLite database viewer and editor with an enhanced TUI interface.
 

@@ -1,5 +1,5 @@
 """
-Command Line Interface for SQLite Viewer
+Command Line Interface for Loula's SQLite Viewer
 """
 
 import cmd
@@ -15,7 +15,7 @@ readline.backend = 'readline'
 class SQLiteCLI(cmd.Cmd):
     """Command Line Interface for SQLite database management"""
 
-    intro = "Welcome to SQLite Viewer CLI. Type 'help' for commands."
+    intro = "Welcome to Loula's SQLite Viewer CLI. Type 'help' for commands."
     prompt = 'sqlite> '
 
     def __init__(self):
@@ -92,7 +92,7 @@ class SQLiteCLI(cmd.Cmd):
             print(result)
 
     def do_quit(self, arg):
-        """Quit the SQLite Viewer."""
+        """Quit Loula's SQLite Viewer."""
         self.db.disconnect()
         print("Goodbye.")
         return True

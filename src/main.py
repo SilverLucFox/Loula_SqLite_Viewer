@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SQLite Viewer - Main Entry Point
+Loula's SQLite Viewer - Main Entry Point
 """
 
 try:

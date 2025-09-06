@@ -1,5 +1,5 @@
 """
-Configuration management for SQLite Viewer
+Configuration management for Loula's SQLite Viewer
 """
 
 import json

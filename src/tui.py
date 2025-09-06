@@ -1,5 +1,5 @@
 """
-Text User Interface for SQLite Viewer
+Text User Interface for Loula's SQLite Viewer
 """
 
 import curses
@@ -458,7 +458,7 @@ class SQLiteTUI:
         h, w = stdscr.getmaxyx()
 
         # Draw title
-        title_str = f" SQLite Viewer - {title} "
+        title_str = f" Loula's SQLite Viewer - {title} "
         stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
         stdscr.addstr(1, (w - len(title_str)) // 2, title_str, curses.A_BOLD | curses.color_pair(2))
 
