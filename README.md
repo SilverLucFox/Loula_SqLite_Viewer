@@ -28,10 +28,10 @@ The viewer features a professional Text User Interface (TUI) similar to Linux ta
 
 ```bash
 # Run with TUI (recommended)
-python main.py
+python -m src.core.main
 
-# Or run the legacy single-file version
-python sqlite_viewer.py
+# Or run the CLI version
+python -c "from src.core.cli import SQLiteCLI; cli = SQLiteCLI(); cli.cmdloop()"
 ```
 
 ### Main Menu Options:
@@ -57,6 +57,13 @@ python sqlite_viewer.py
 - **Data Pagination**: Use ←→ to navigate through large tables
 - **Column Headers**: Automatic display of column names with table separators
 - **Page Information**: Shows current page and total rows
+
+## Installation
+
+1. Clone or download the repository
+2. Ensure Python 3.6+ is installed
+3. For Windows users, the `windows-curses` package will be used for TUI if available
+4. Run the application as described in Usage
 
 ## Requirements
 
@@ -93,23 +100,79 @@ The interface remembers your saved databases with their colors and automatically
 
 ```
 Loula_SqLite_Viewer/
-├── main.py              # Application entry point
-├── tui.py               # Text User Interface (TUI)
-├── cli.py               # Command Line Interface (CLI)
-├── database.py          # Database operations
-├── config.py            # Configuration management
-├── sqlite_viewer.py     # Legacy single-file version
-├── create_test_db.py    # Test database creator
-├── test_viewer.py       # Test scripts
-├── __init__.py          # Package initialization
-├── db_config.json       # User configuration
-└── README.md           # This file
+├── src/
+│   ├── __init__.py          # Package initialization
+│   ├── core/
+│   │   ├── __init__.py      # Core module
+│   │   ├── main.py          # Application entry point
+│   │   └── cli.py           # Command Line Interface (CLI)
+│   ├── database/
+│   │   ├── __init__.py      # Database module
+│   │   └── database.py      # Database operations
+│   ├── ui/
+│   │   ├── __init__.py      # UI module
+│   │   ├── tui.py           # Text User Interface (TUI)
+│   │   ├── screens.py       # Screen classes for TUI
+│   │   ├── table_browser.py # Table browsing functionality
+│   │   └── ui_utils.py      # UI utility functions
+│   ├── config/
+│   │   ├── __init__.py      # Config module
+│   │   ├── config.py        # Configuration management
+│   │   └── db_config.json   # User configuration
+│   └── tools/
+│       ├── __init__.py      # Tools module
+│       └── tools.py         # SQL tools
+├── LICENSE
+├── README.md                # This file
+└── __pycache__/
 ```
 
 ### Architecture
 
-- **main.py**: Entry point that chooses between TUI and CLI
-- **tui.py**: Professional text-based user interface with menus
-- **cli.py**: Command-line interface for scripting
-- **database.py**: All SQLite database operations
-- **config.py**: Configuration and saved databases management
+The application is organized into modular components:
+
+- **Core Module (`src/core/`)**: Contains the main entry point and CLI interface
+  - `main.py`: Entry point that chooses between TUI and CLI based on curses availability
+  - `cli.py`: Command-line interface for scripting and headless operation
+
+- **Database Module (`src/database/`)**: Handles all SQLite database operations
+  - `database.py`: DatabaseManager class for connecting, querying, and managing SQLite databases
+
+- **UI Module (`src/ui/`)**: Text User Interface components
+  - `tui.py`: Main TUI class coordinating the interface
+  - `screens.py`: Individual screen classes for different menus
+  - `table_browser.py`: Table browsing and data display functionality
+  - `ui_utils.py`: Utility functions for UI operations
+
+- **Config Module (`src/config/`)**: Configuration and persistence
+  - `config.py`: ConfigManager class for saving databases and settings
+  - `db_config.json`: JSON file storing saved databases and last connection
+
+- **Tools Module (`src/tools/`)**: SQL and utility tools
+  - `tools.py`: SQLTools class for executing queries and SQL operations
+
+### How It Works
+
+1. **Startup**: `main.py` checks for curses library availability
+   - If available, launches TUI mode with `SQLiteTUI`
+   - If not, falls back to CLI mode with `SQLiteCLI`
+
+2. **TUI Mode**: Uses curses for full-screen text interface
+   - `SQLiteTUI` manages the main loop and menu navigation
+   - Delegates to `ConnectionScreens` for connection management
+   - Uses `TableBrowser` for data browsing
+   - Leverages `SQLTools` for query execution
+
+3. **Database Operations**: All database interactions go through `DatabaseManager`
+   - Connects to SQLite files
+   - Executes queries and fetches results
+   - Manages connections and transactions
+
+4. **Configuration**: `ConfigManager` handles persistence
+   - Saves database connections with colors
+   - Remembers last connected database
+   - Stores settings in JSON format
+
+5. **CLI Mode**: Command-line interface for automation
+   - Interactive shell with commands like `connect`, `select`, etc.
+   - Useful for scripting and headless environments
