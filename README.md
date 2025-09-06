@@ -132,19 +132,23 @@ Loula_SqLite_Viewer/
 The application is organized into modular components:
 
 - **Core Module (`src/core/`)**: Contains the main entry point and CLI interface
+
   - `main.py`: Entry point that chooses between TUI and CLI based on curses availability
   - `cli.py`: Command-line interface for scripting and headless operation
 
 - **Database Module (`src/database/`)**: Handles all SQLite database operations
+
   - `database.py`: DatabaseManager class for connecting, querying, and managing SQLite databases
 
 - **UI Module (`src/ui/`)**: Text User Interface components
+
   - `tui.py`: Main TUI class coordinating the interface
   - `screens.py`: Individual screen classes for different menus
   - `table_browser.py`: Table browsing and data display functionality
   - `ui_utils.py`: Utility functions for UI operations
 
 - **Config Module (`src/config/`)**: Configuration and persistence
+
   - `config.py`: ConfigManager class for saving databases and settings
   - `db_config.json`: JSON file storing saved databases and last connection
 
@@ -154,21 +158,25 @@ The application is organized into modular components:
 ### How It Works
 
 1. **Startup**: `main.py` checks for curses library availability
+
    - If available, launches TUI mode with `SQLiteTUI`
    - If not, falls back to CLI mode with `SQLiteCLI`
 
 2. **TUI Mode**: Uses curses for full-screen text interface
+
    - `SQLiteTUI` manages the main loop and menu navigation
    - Delegates to `ConnectionScreens` for connection management
    - Uses `TableBrowser` for data browsing
    - Leverages `SQLTools` for query execution
 
 3. **Database Operations**: All database interactions go through `DatabaseManager`
+
    - Connects to SQLite files
    - Executes queries and fetches results
    - Manages connections and transactions
 
 4. **Configuration**: `ConfigManager` handles persistence
+
    - Saves database connections with colors
    - Remembers last connected database
    - Stores settings in JSON format
