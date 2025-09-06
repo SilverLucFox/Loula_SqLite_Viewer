@@ -513,36 +513,415 @@ class SQLiteTUI:
         stdscr.getch()
 
     def sql_input_screen(self, stdscr):
-        """SQL query input screen"""
+        """SQL query input screen with quick tools"""
         h, w = stdscr.getmaxyx()
-        stdscr.clear()
 
-        title = "SQL Query"
+        # Quick tools menu
+        quick_tools = [
+            "Insert Record",
+            "Update Record",
+            "Delete Record",
+            "Create Table",
+            "Drop Table",
+            "View Table Structure",
+            "Custom SQL Query",
+            "Back to Main Menu"
+        ]
+
+        selected_tool = 0
+
+        while True:
+            stdscr.clear()
+            title = "SQL Tools & Queries"
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            # Show current database
+            if self.db.db_name:
+                db_status = f"Database: {self.db.db_name}"
+                stdscr.addstr(2, 0, db_status, curses.color_pair(getattr(self, 'db_color', 3)))
+
+            # Display quick tools
+            for i, tool in enumerate(quick_tools):
+                y = 4 + i
+                if y >= h - 2:
+                    break
+                if i == selected_tool:
+                    stdscr.addstr(y, 2, f"> {tool}", curses.A_REVERSE | curses.color_pair(4))
+                else:
+                    stdscr.addstr(y, 2, f"  {tool}", curses.color_pair(5))
+
+            stdscr.addstr(h - 1, 0, "Use ↑↓ to select tool, Enter to use, Escape to cancel", curses.color_pair(6))
+            stdscr.refresh()
+
+            key = stdscr.getch()
+
+            if key == curses.KEY_UP:
+                selected_tool = (selected_tool - 1) % len(quick_tools)
+            elif key == curses.KEY_DOWN:
+                selected_tool = (selected_tool + 1) % len(quick_tools)
+            elif key == 10 or key == 13:  # Enter
+                if selected_tool == 0:  # Insert Record
+                    self.insert_record_tool(stdscr)
+                elif selected_tool == 1:  # Update Record
+                    self.update_record_tool(stdscr)
+                elif selected_tool == 2:  # Delete Record
+                    self.delete_record_tool(stdscr)
+                elif selected_tool == 3:  # Create Table
+                    self.create_table_tool(stdscr)
+                elif selected_tool == 4:  # Drop Table
+                    self.drop_table_tool(stdscr)
+                elif selected_tool == 5:  # View Table Structure
+                    self.view_table_structure_tool(stdscr)
+                elif selected_tool == 6:  # Custom SQL Query
+                    self.custom_sql_tool(stdscr)
+                elif selected_tool == 7:  # Back to Main Menu
+                    return
+            elif key == 27:  # Escape
+                return
+
+    def insert_record_tool(self, stdscr):
+        """Quick tool for inserting a record"""
+        h, w = stdscr.getmaxyx()
+
+        # Get available tables
+        tables = self.db.get_tables()
+        if not tables:
+            stdscr.clear()
+            stdscr.addstr(1, 2, "No tables found in database!", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Select table
+        selected_table = 0
+        while True:
+            stdscr.clear()
+            title = "Insert Record - Select Table"
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            for i, table in enumerate(tables):
+                y = 3 + i
+                if y >= h - 2:
+                    break
+                if i == selected_table:
+                    stdscr.addstr(y, 2, f"> {table}", curses.A_REVERSE | curses.color_pair(4))
+                else:
+                    stdscr.addstr(y, 2, f"  {table}", curses.color_pair(5))
+
+            stdscr.addstr(h - 1, 0, "Use ↑↓ to select table, Enter to continue, Escape to cancel", curses.color_pair(6))
+            stdscr.refresh()
+
+            key = stdscr.getch()
+            if key == curses.KEY_UP:
+                selected_table = (selected_table - 1) % len(tables)
+            elif key == curses.KEY_DOWN:
+                selected_table = (selected_table + 1) % len(tables)
+            elif key == 10 or key == 13:  # Enter
+                break
+            elif key == 27:  # Escape
+                return
+
+        table_name = tables[selected_table]
+        schema = self.db.get_table_schema(table_name)
+
+        if not schema:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"Could not get schema for table {table_name}", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Input values for each column
+        values = []
+        for col_info in schema:
+            col_name, col_type = col_info[1], col_info[2]
+
+            stdscr.clear()
+            title = f"Insert Record - {table_name}"
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            stdscr.addstr(3, 2, f"Enter value for {col_name} ({col_type}):", curses.color_pair(5))
+            stdscr.addstr(4, 2, ">" , curses.color_pair(4))
+
+            curses.echo()
+            value = stdscr.getstr(4, 4, w - 6).decode('utf-8').strip()
+            curses.noecho()
+
+            if value.lower() == 'null':
+                values.append(None)
+            elif col_type.upper() in ['INTEGER', 'REAL', 'NUMERIC']:
+                try:
+                    values.append(float(value) if '.' in value else int(value))
+                except ValueError:
+                    values.append(value)
+            else:
+                values.append(value)
+
+        # Generate and execute INSERT statement
+        placeholders = ', '.join(['?' for _ in values])
+        columns = ', '.join([col[1] for col in schema])
+        sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
+
+        try:
+            result = self.db.execute_sql(sql, values)
+            stdscr.clear()
+            stdscr.addstr(1, 2, "Record inserted successfully!", curses.color_pair(3))
+            stdscr.addstr(3, 2, f"Table: {table_name}", curses.color_pair(5))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+        except Exception as e:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"Error inserting record: {str(e)}", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+
+    def update_record_tool(self, stdscr):
+        """Quick tool for updating a record"""
+        h, w = stdscr.getmaxyx()
+
+        # Get available tables
+        tables = self.db.get_tables()
+        if not tables:
+            stdscr.clear()
+            stdscr.addstr(1, 2, "No tables found in database!", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Select table
+        selected_table = 0
+        while True:
+            stdscr.clear()
+            title = "Update Record - Select Table"
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            for i, table in enumerate(tables):
+                y = 3 + i
+                if y >= h - 2:
+                    break
+                if i == selected_table:
+                    stdscr.addstr(y, 2, f"> {table}", curses.A_REVERSE | curses.color_pair(4))
+                else:
+                    stdscr.addstr(y, 2, f"  {table}", curses.color_pair(5))
+
+            stdscr.addstr(h - 1, 0, "Use ↑↓ to select table, Enter to continue, Escape to cancel", curses.color_pair(6))
+            stdscr.refresh()
+
+            key = stdscr.getch()
+            if key == curses.KEY_UP:
+                selected_table = (selected_table - 1) % len(tables)
+            elif key == curses.KEY_DOWN:
+                selected_table = (selected_table + 1) % len(tables)
+            elif key == 10 or key == 13:  # Enter
+                break
+            elif key == 27:  # Escape
+                return
+
+        table_name = tables[selected_table]
+        schema = self.db.get_table_schema(table_name)
+
+        if not schema:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"Could not get schema for table {table_name}", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Get record ID or primary key for identification
+        stdscr.clear()
+        title = f"Update Record - {table_name}"
         stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
         stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
 
-        stdscr.addstr(3, 2, "Enter SQL query:", curses.color_pair(5))
+        stdscr.addstr(3, 2, "Enter record ID (primary key value):", curses.color_pair(5))
         stdscr.addstr(4, 2, ">" , curses.color_pair(4))
 
-        # Simple input handling
         curses.echo()
-        sql = stdscr.getstr(4, 4, w - 6).decode('utf-8')
+        record_id = stdscr.getstr(4, 4, w - 6).decode('utf-8').strip()
         curses.noecho()
 
-        if sql:
-            result = self.db.execute_sql(sql)
-            stdscr.clear()
-            stdscr.addstr(0, 0, "SQL Result:", curses.A_BOLD)
-            if isinstance(result, list):
-                for i, row in enumerate(result):
-                    y = 2 + i
-                    if y >= h - 2:
-                        break
-                    row_str = " | ".join(str(cell) for cell in row)
-                    stdscr.addstr(y, 2, row_str)
-            else:
-                stdscr.addstr(2, 2, str(result))
+        if not record_id:
+            return
 
+        # Select which column to update
+        selected_col = 0
+        while True:
+            stdscr.clear()
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            stdscr.addstr(3, 2, f"Select column to update (Record ID: {record_id}):", curses.color_pair(5))
+
+            for i, col_info in enumerate(schema):
+                y = 5 + i
+                if y >= h - 2:
+                    break
+                col_name, col_type = col_info[1], col_info[2]
+                if i == selected_col:
+                    stdscr.addstr(y, 2, f"> {col_name} ({col_type})", curses.A_REVERSE | curses.color_pair(4))
+                else:
+                    stdscr.addstr(y, 2, f"  {col_name} ({col_type})", curses.color_pair(5))
+
+            stdscr.addstr(h - 1, 0, "Use ↑↓ to select column, Enter to continue, Escape to cancel", curses.color_pair(6))
+            stdscr.refresh()
+
+            key = stdscr.getch()
+            if key == curses.KEY_UP:
+                selected_col = (selected_col - 1) % len(schema)
+            elif key == curses.KEY_DOWN:
+                selected_col = (selected_col + 1) % len(schema)
+            elif key == 10 or key == 13:  # Enter
+                break
+            elif key == 27:  # Escape
+                return
+
+        col_info = schema[selected_col]
+        col_name, col_type = col_info[1], col_info[2]
+
+        # Input new value
+        stdscr.clear()
+        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        stdscr.addstr(3, 2, f"Enter new value for {col_name} ({col_type}):", curses.color_pair(5))
+        stdscr.addstr(4, 2, ">" , curses.color_pair(4))
+
+        curses.echo()
+        new_value = stdscr.getstr(4, 4, w - 6).decode('utf-8').strip()
+        curses.noecho()
+
+        # Convert value based on type
+        if new_value.lower() == 'null':
+            final_value = None
+        elif col_type.upper() in ['INTEGER', 'REAL', 'NUMERIC']:
+            try:
+                final_value = float(new_value) if '.' in new_value else int(new_value)
+            except ValueError:
+                final_value = new_value
+        else:
+            final_value = new_value
+
+        # Generate and execute UPDATE statement
+        sql = f"UPDATE {table_name} SET {col_name} = ? WHERE rowid = ?"
+
+        try:
+            result = self.db.execute_sql(sql, [final_value, record_id])
+            stdscr.clear()
+            stdscr.addstr(1, 2, "Record updated successfully!", curses.color_pair(3))
+            stdscr.addstr(3, 2, f"Table: {table_name}", curses.color_pair(5))
+            stdscr.addstr(4, 2, f"Column: {col_name}", curses.color_pair(5))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+        except Exception as e:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"Error updating record: {str(e)}", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+
+    def delete_record_tool(self, stdscr):
+        """Quick tool for deleting a record"""
+        h, w = stdscr.getmaxyx()
+
+        # Get available tables
+        tables = self.db.get_tables()
+        if not tables:
+            stdscr.clear()
+            stdscr.addstr(1, 2, "No tables found in database!", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Select table
+        selected_table = 0
+        while True:
+            stdscr.clear()
+            title = "Delete Record - Select Table"
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            for i, table in enumerate(tables):
+                y = 3 + i
+                if y >= h - 2:
+                    break
+                if i == selected_table:
+                    stdscr.addstr(y, 2, f"> {table}", curses.A_REVERSE | curses.color_pair(4))
+                else:
+                    stdscr.addstr(y, 2, f"  {table}", curses.color_pair(5))
+
+            stdscr.addstr(h - 1, 0, "Use ↑↓ to select table, Enter to continue, Escape to cancel", curses.color_pair(6))
+            stdscr.refresh()
+
+            key = stdscr.getch()
+            if key == curses.KEY_UP:
+                selected_table = (selected_table - 1) % len(tables)
+            elif key == curses.KEY_DOWN:
+                selected_table = (selected_table + 1) % len(tables)
+            elif key == 10 or key == 13:  # Enter
+                break
+            elif key == 27:  # Escape
+                return
+
+        table_name = tables[selected_table]
+
+        # Get record ID
+        stdscr.clear()
+        title = f"Delete Record - {table_name}"
+        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        stdscr.addstr(3, 2, "Enter record ID to delete:", curses.color_pair(5))
+        stdscr.addstr(4, 2, ">" , curses.color_pair(4))
+
+        curses.echo()
+        record_id = stdscr.getstr(4, 4, w - 6).decode('utf-8').strip()
+        curses.noecho()
+
+        if not record_id:
+            return
+
+        # Confirm deletion
+        stdscr.clear()
+        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        stdscr.addstr(3, 2, f"Are you sure you want to delete record ID {record_id}?", curses.color_pair(7))
+        stdscr.addstr(4, 2, "from table " + table_name + "?", curses.color_pair(7))
+        stdscr.addstr(6, 2, "Press 'y' to confirm, any other key to cancel", curses.color_pair(5))
+
+        stdscr.refresh()
+        key = stdscr.getch()
+
+        if key != ord('y'):
+            return
+
+        # Execute DELETE statement
+        sql = f"DELETE FROM {table_name} WHERE rowid = ?"
+
+        try:
+            result = self.db.execute_sql(sql, [record_id])
+            stdscr.clear()
+            stdscr.addstr(1, 2, "Record deleted successfully!", curses.color_pair(3))
+            stdscr.addstr(3, 2, f"Table: {table_name}", curses.color_pair(5))
+            stdscr.addstr(4, 2, f"Record ID: {record_id}", curses.color_pair(5))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+        except Exception as e:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"Error deleting record: {str(e)}", curses.color_pair(7))
             stdscr.addstr(h - 1, 0, "Press any key to continue")
             stdscr.refresh()
             stdscr.getch()
@@ -632,3 +1011,331 @@ class SQLiteTUI:
     def run(self):
         """Run the TUI"""
         curses.wrapper(self.main_loop)
+
+    def create_table_tool(self, stdscr):
+        """Quick tool for creating a new table"""
+        h, w = stdscr.getmaxyx()
+
+        # Get table name
+        stdscr.clear()
+        title = "Create New Table"
+        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        stdscr.addstr(3, 2, "Enter table name:", curses.color_pair(5))
+        stdscr.addstr(4, 2, ">" , curses.color_pair(4))
+
+        curses.echo()
+        table_name = stdscr.getstr(4, 4, w - 6).decode('utf-8').strip()
+        curses.noecho()
+
+        if not table_name:
+            return
+
+        # Get number of columns
+        stdscr.clear()
+        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        stdscr.addstr(3, 2, f"Table: {table_name}", curses.color_pair(3))
+        stdscr.addstr(4, 2, "Enter number of columns:", curses.color_pair(5))
+        stdscr.addstr(5, 2, ">" , curses.color_pair(4))
+
+        curses.echo()
+        try:
+            num_cols = int(stdscr.getstr(5, 4, 10).decode('utf-8').strip())
+        except ValueError:
+            num_cols = 0
+        curses.noecho()
+
+        if num_cols <= 0:
+            return
+
+        # Define columns
+        columns = []
+        for i in range(num_cols):
+            stdscr.clear()
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            stdscr.addstr(3, 2, f"Table: {table_name} - Column {i+1}/{num_cols}", curses.color_pair(3))
+
+            # Column name
+            stdscr.addstr(5, 2, "Column name:", curses.color_pair(5))
+            stdscr.addstr(6, 2, ">" , curses.color_pair(4))
+
+            curses.echo()
+            col_name = stdscr.getstr(6, 4, w - 6).decode('utf-8').strip()
+            curses.noecho()
+
+            if not col_name:
+                continue
+
+            # Column type
+            stdscr.clear()
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            stdscr.addstr(3, 2, f"Table: {table_name} - Column {i+1}: {col_name}", curses.color_pair(3))
+
+            types = ["TEXT", "INTEGER", "REAL", "BLOB", "NUMERIC"]
+            selected_type = 0
+
+            while True:
+                stdscr.addstr(5, 2, "Select data type:", curses.color_pair(5))
+
+                for j, col_type in enumerate(types):
+                    y = 7 + j
+                    if j == selected_type:
+                        stdscr.addstr(y, 2, f"> {col_type}", curses.A_REVERSE | curses.color_pair(4))
+                    else:
+                        stdscr.addstr(y, 2, f"  {col_type}", curses.color_pair(5))
+
+                stdscr.addstr(h - 1, 0, "Use ↑↓ to select type, Enter to confirm", curses.color_pair(6))
+                stdscr.refresh()
+
+                key = stdscr.getch()
+                if key == curses.KEY_UP:
+                    selected_type = (selected_type - 1) % len(types)
+                elif key == curses.KEY_DOWN:
+                    selected_type = (selected_type + 1) % len(types)
+                elif key == 10 or key == 13:  # Enter
+                    break
+
+            columns.append(f"{col_name} {types[selected_type]}")
+
+        if not columns:
+            return
+
+        # Generate CREATE TABLE statement
+        columns_str = ', '.join(columns)
+        sql = f"CREATE TABLE {table_name} ({columns_str})"
+
+        try:
+            result = self.db.execute_sql(sql)
+            stdscr.clear()
+            stdscr.addstr(1, 2, "Table created successfully!", curses.color_pair(3))
+            stdscr.addstr(3, 2, f"Table: {table_name}", curses.color_pair(5))
+            stdscr.addstr(4, 2, f"Columns: {len(columns)}", curses.color_pair(5))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+        except Exception as e:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"Error creating table: {str(e)}", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+
+    def drop_table_tool(self, stdscr):
+        """Quick tool for dropping a table"""
+        h, w = stdscr.getmaxyx()
+
+        # Get available tables
+        tables = self.db.get_tables()
+        if not tables:
+            stdscr.clear()
+            stdscr.addstr(1, 2, "No tables found in database!", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Select table
+        selected_table = 0
+        while True:
+            stdscr.clear()
+            title = "Drop Table - Select Table"
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            for i, table in enumerate(tables):
+                y = 3 + i
+                if y >= h - 2:
+                    break
+                if i == selected_table:
+                    stdscr.addstr(y, 2, f"> {table}", curses.A_REVERSE | curses.color_pair(4))
+                else:
+                    stdscr.addstr(y, 2, f"  {table}", curses.color_pair(5))
+
+            stdscr.addstr(h - 1, 0, "Use ↑↓ to select table, Enter to continue, Escape to cancel", curses.color_pair(6))
+            stdscr.refresh()
+
+            key = stdscr.getch()
+            if key == curses.KEY_UP:
+                selected_table = (selected_table - 1) % len(tables)
+            elif key == curses.KEY_DOWN:
+                selected_table = (selected_table + 1) % len(tables)
+            elif key == 10 or key == 13:  # Enter
+                break
+            elif key == 27:  # Escape
+                return
+
+        table_name = tables[selected_table]
+
+        # Confirm deletion
+        stdscr.clear()
+        title = f"Drop Table - {table_name}"
+        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        stdscr.addstr(3, 2, f"Are you sure you want to drop table '{table_name}'?", curses.color_pair(7))
+        stdscr.addstr(4, 2, "This action cannot be undone!", curses.color_pair(7))
+        stdscr.addstr(6, 2, "Press 'y' to confirm, any other key to cancel", curses.color_pair(5))
+
+        stdscr.refresh()
+        key = stdscr.getch()
+
+        if key != ord('y'):
+            return
+
+        # Execute DROP TABLE statement
+        sql = f"DROP TABLE {table_name}"
+
+        try:
+            result = self.db.execute_sql(sql)
+            stdscr.clear()
+            stdscr.addstr(1, 2, "Table dropped successfully!", curses.color_pair(3))
+            stdscr.addstr(3, 2, f"Dropped table: {table_name}", curses.color_pair(5))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+        except Exception as e:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"Error dropping table: {str(e)}", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+
+    def view_table_structure_tool(self, stdscr):
+        """Quick tool for viewing table structure"""
+        h, w = stdscr.getmaxyx()
+
+        # Get available tables
+        tables = self.db.get_tables()
+        if not tables:
+            stdscr.clear()
+            stdscr.addstr(1, 2, "No tables found in database!", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Select table
+        selected_table = 0
+        while True:
+            stdscr.clear()
+            title = "View Table Structure - Select Table"
+            stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+            stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+            for i, table in enumerate(tables):
+                y = 3 + i
+                if y >= h - 2:
+                    break
+                if i == selected_table:
+                    stdscr.addstr(y, 2, f"> {table}", curses.A_REVERSE | curses.color_pair(4))
+                else:
+                    stdscr.addstr(y, 2, f"  {table}", curses.color_pair(5))
+
+            stdscr.addstr(h - 1, 0, "Use ↑↓ to select table, Enter to view, Escape to cancel", curses.color_pair(6))
+            stdscr.refresh()
+
+            key = stdscr.getch()
+            if key == curses.KEY_UP:
+                selected_table = (selected_table - 1) % len(tables)
+            elif key == curses.KEY_DOWN:
+                selected_table = (selected_table + 1) % len(tables)
+            elif key == 10 or key == 13:  # Enter
+                break
+            elif key == 27:  # Escape
+                return
+
+        table_name = tables[selected_table]
+        schema = self.db.get_table_schema(table_name)
+
+        if not schema:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"Could not get schema for table {table_name}", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Display table structure
+        stdscr.clear()
+        title = f"Table Structure - {table_name}"
+        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        stdscr.addstr(3, 2, "Column Name", curses.A_BOLD | curses.color_pair(3))
+        stdscr.addstr(3, 20, "Type", curses.A_BOLD | curses.color_pair(3))
+        stdscr.addstr(3, 35, "Nullable", curses.A_BOLD | curses.color_pair(3))
+        stdscr.addstr(3, 50, "Default", curses.A_BOLD | curses.color_pair(3))
+        stdscr.addstr(4, 2, "-" * (w - 4), curses.color_pair(3))
+
+        for i, col_info in enumerate(schema):
+            y = 5 + i
+            if y >= h - 2:
+                break
+
+            col_id, col_name, col_type, not_null, default_val, pk = col_info
+
+            stdscr.addstr(y, 2, col_name[:17], curses.color_pair(5))
+            stdscr.addstr(y, 20, col_type[:14], curses.color_pair(5))
+            stdscr.addstr(y, 35, "NO" if not_null else "YES", curses.color_pair(5))
+            stdscr.addstr(y, 50, str(default_val)[:w-52] if default_val else "", curses.color_pair(5))
+
+        stdscr.addstr(h - 1, 0, "Press any key to continue", curses.color_pair(6))
+        stdscr.refresh()
+        stdscr.getch()
+
+    def custom_sql_tool(self, stdscr):
+        """Custom SQL query tool"""
+        h, w = stdscr.getmaxyx()
+
+        stdscr.clear()
+        title = "Custom SQL Query"
+        stdscr.addstr(0, 0, "=" * w, curses.color_pair(1))
+        stdscr.addstr(1, (w - len(title)) // 2, title, curses.A_BOLD | curses.color_pair(2))
+
+        stdscr.addstr(3, 2, "Enter SQL query:", curses.color_pair(5))
+        stdscr.addstr(4, 2, ">" , curses.color_pair(4))
+
+        curses.echo()
+        sql = stdscr.getstr(4, 4, w - 6).decode('utf-8').strip()
+        curses.noecho()
+
+        if not sql:
+            return
+
+        try:
+            result = self.db.execute_sql(sql)
+            stdscr.clear()
+            stdscr.addstr(0, 0, "SQL Result:", curses.A_BOLD | curses.color_pair(2))
+
+            if isinstance(result, list):
+                if result:
+                    # Display results
+                    for i, row in enumerate(result):
+                        y = 2 + i
+                        if y >= h - 2:
+                            break
+                        row_str = " | ".join(str(cell) for cell in row)
+                        if len(row_str) > w - 4:
+                            row_str = row_str[:w-7] + "..."
+                        stdscr.addstr(y, 2, row_str, curses.color_pair(5))
+                else:
+                    stdscr.addstr(2, 2, "Query executed successfully (no results)", curses.color_pair(3))
+            else:
+                stdscr.addstr(2, 2, f"Result: {result}", curses.color_pair(3))
+
+            stdscr.addstr(h - 1, 0, "Press any key to continue", curses.color_pair(6))
+            stdscr.refresh()
+            stdscr.getch()
+        except Exception as e:
+            stdscr.clear()
+            stdscr.addstr(1, 2, f"SQL Error: {str(e)}", curses.color_pair(7))
+            stdscr.addstr(h - 1, 0, "Press any key to continue")
+            stdscr.refresh()
+            stdscr.getch()
