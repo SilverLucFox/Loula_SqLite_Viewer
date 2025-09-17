@@ -11,6 +11,8 @@ A professional console-based SQLite database viewer and editor with an enhanced 
 - **Connect to SQLite databases** - Save database path and name for quick reconnection
 - **Browse Tables and Schemas** - View table structures and data
 - **Execute SQL Commands** - Full SQL support for queries and modifications
+- **Advanced Tools** - Insert, Update, Delete records and manage table structures
+- **Read Me** - View developer information and project details
 - **Robust Error Handling** - Professional-grade reliability
 
 ## Interface
@@ -39,6 +41,8 @@ python -c "from src.core.cli import SQLiteCLI; cli = SQLiteCLI(); cli.cmdloop()"
 - **Connect to Database**: Connect to ANY SQLite database file by entering path and name
 - **Browse Tables**: **NEW!** Split-screen interface to browse tables and their contents with pagination
 - **Execute SQL**: Run custom SQL queries
+- **Tools**: Access advanced database tools (Insert, Update, Delete, Create Table, etc.)
+- **Read Me**: View developer information and project details
 - **Disconnect**: Close current database connection
 - **Quit**: Exit the application
 
