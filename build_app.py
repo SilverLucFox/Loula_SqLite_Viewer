@@ -22,9 +22,19 @@ def run_command(cmd, description):
         print(f"Error: {e.stderr}")
         return False
 
-def create_executable():
-    """Create standalone executable using PyInstaller"""
-    print("Building Loula's SQLite Viewer executable...")
+def cleanup_build_artifacts():
+    """Clean up build artifacts"""
+    print("Cleaning up build artifacts...")
+    for dir_name in ["build", "dist"]:
+        if os.path.exists(dir_name):
+            try:
+                import shutil
+                shutil.rmtree(dir_name)
+                print(f"✓ Cleaned {dir_name} directory")
+            except Exception as e:
+                print(f"✗ Could not clean {dir_name}: {e}")
+                return False
+    return True
 
     # Determine platform-specific settings
     system = platform.system().lower()
@@ -130,8 +140,9 @@ def main():
     print("2. Create Python distributions (wheel + sdist)")
     print("3. Install locally for testing")
     print("4. Build everything")
+    print("5. Clean build artifacts only")
 
-    choice = input("\nEnter your choice (1-4): ").strip()
+    choice = input("\nEnter your choice (1-5): ").strip()
 
     if choice == "1":
         create_executable()
@@ -144,6 +155,17 @@ def main():
         create_executable()
         create_wheel()
         create_sdist()
+    elif choice == "5":
+        print("Cleaning build artifacts...")
+        for dir_name in ["build", "dist"]:
+            if os.path.exists(dir_name):
+                try:
+                    import shutil
+                    shutil.rmtree(dir_name)
+                    print(f"✓ Cleaned {dir_name} directory")
+                except Exception as e:
+                    print(f"✗ Could not clean {dir_name}: {e}")
+        print("Cleanup completed!")
     else:
         print("Invalid choice. Exiting.")
         sys.exit(1)
