@@ -29,12 +29,46 @@ def cleanup_build_artifacts():
         if os.path.exists(dir_name):
             try:
                 import shutil
-                shutil.rmtree(dir_name)
+                import time
+                # Try to remove, if it fails, wait and retry
+                try:
+                    shutil.rmtree(dir_name)
+                except PermissionError:
+                    print(f"Waiting for {dir_name} to be available...")
+                    time.sleep(2)
+                    shutil.rmtree(dir_name)
                 print(f"✓ Cleaned {dir_name} directory")
             except Exception as e:
                 print(f"✗ Could not clean {dir_name}: {e}")
                 return False
     return True
+
+def create_executable():
+    """Create standalone executable using PyInstaller"""
+    print("Building Loula's SQLite Viewer executable...")
+
+    # Determine platform-specific settings
+    system = platform.system().lower()
+    if system == "windows":
+        exe_name = "sqlite-viewer.exe"
+        console = True   # Show console on Windows for CLI/TUI apps
+    else:
+        exe_name = "sqlite-viewer"
+        console = True   # Use console mode on Unix-like systems
+
+    # Check if executable is currently running
+    exe_path = os.path.join("dist", exe_name)
+    if os.path.exists(exe_path):
+        print(f"Warning: {exe_path} exists and may be in use.")
+        print("Please close any running instances of the application before building.")
+
+    # Clean up previous build artifacts
+    if not cleanup_build_artifacts():
+        return False
+
+    # Create directories
+    os.makedirs("build", exist_ok=True)
+    os.makedirs("dist", exist_ok=True)
 
     # Determine platform-specific settings
     system = platform.system().lower()
@@ -58,7 +92,7 @@ def cleanup_build_artifacts():
     ]
 
     if not console:
-        cmd.append("--noconsole")       # Hide console on Windows
+        cmd.append("--noconsole")       # Hide console (not used for CLI/TUI apps)
 
     # Add data files
     data_files = []
@@ -156,15 +190,7 @@ def main():
         create_wheel()
         create_sdist()
     elif choice == "5":
-        print("Cleaning build artifacts...")
-        for dir_name in ["build", "dist"]:
-            if os.path.exists(dir_name):
-                try:
-                    import shutil
-                    shutil.rmtree(dir_name)
-                    print(f"✓ Cleaned {dir_name} directory")
-                except Exception as e:
-                    print(f"✗ Could not clean {dir_name}: {e}")
+        cleanup_build_artifacts()
         print("Cleanup completed!")
     else:
         print("Invalid choice. Exiting.")

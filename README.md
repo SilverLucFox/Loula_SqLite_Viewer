@@ -237,6 +237,7 @@ sqlite-viewer
    ```bash
    python build_app.py
    # Choose option 1 for executable only
+   # Choose option 5 to clean build artifacts first
    ```
 
 3. **Run the executable:**

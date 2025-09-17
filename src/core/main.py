@@ -17,8 +17,14 @@ def can_use_curses():
     if not HAS_CURSES:
         return False
 
-    # Check if we're in a proper terminal
-    if not sys.stdout.isatty() or not sys.stderr.isatty():
+    # Check if stdout/stderr exist and are TTYs
+    try:
+        if sys.stdout is None or sys.stderr is None:
+            return False
+        if not sys.stdout.isatty() or not sys.stderr.isatty():
+            return False
+    except (AttributeError, OSError):
+        # Handle cases where isatty() is not available or fails
         return False
 
     # Check for environment variables that indicate non-interactive environments
