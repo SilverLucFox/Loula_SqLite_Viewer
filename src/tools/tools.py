@@ -80,7 +80,7 @@ class SQLTools:
 
         # Collect values for each column
         values = []
-        for i, (col_id, col_name, col_type) in enumerate(schema):
+        for i, (col_id, col_name, col_type, *_) in enumerate(schema):
             y = 7 + i * 2
             if y >= h - 2:
                 break
@@ -157,7 +157,7 @@ class SQLTools:
 
         # Collect new values
         set_parts = []
-        for i, (col_id, col_name, col_type) in enumerate(schema):
+        for i, (col_id, col_name, col_type, *_) in enumerate(schema):
             y = 10 + i * 2
             if y >= h - 4:
                 break
@@ -379,7 +379,7 @@ class SQLTools:
         self.ui.draw_main_title(stdscr)
         stdscr.addstr(2, (w - len(f"Structure of {table_name}")) // 2, f"Structure of {table_name}", curses.A_BOLD | curses.color_pair(2))
 
-        for i, (col_id, col_name, col_type) in enumerate(schema):
+        for i, (col_id, col_name, col_type, *_) in enumerate(schema):
             y = 4 + i
             if y >= h - 2:
                 break
