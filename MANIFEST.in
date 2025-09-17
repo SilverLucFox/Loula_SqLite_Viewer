@@ -1,0 +1,26 @@
+# Include additional files in the distribution
+include README.md
+include LICENSE
+include requirements.txt
+include db_config.json
+include .gitignore
+
+# Include all files in the src directory
+recursive-include src *.py
+recursive-include src *.json
+
+# Exclude development files
+exclude .git*
+exclude __pycache__
+exclude *.pyc
+exclude .pytest_cache
+exclude .mypy_cache
+exclude .coverage
+exclude htmlcov
+exclude dist
+exclude build
+exclude *.egg-info
+
+# Include documentation
+recursive-include docs *.md
+recursive-include docs *.txt

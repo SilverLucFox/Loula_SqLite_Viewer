@@ -1,0 +1,15 @@
+# Loula's SQLite Viewer Requirements
+# Core dependencies (automatically handled by setup.py)
+# windows-curses>=2.3.0; sys_platform == "win32"  # Only needed on Windows
+
+# Development dependencies (optional)
+# pytest>=6.0
+# pytest-cov>=2.0
+# black>=21.0
+# flake8>=3.9
+# mypy>=0.800
+
+# Build dependencies (optional)
+# build>=0.7
+# twine>=3.0
+# pyinstaller>=4.0

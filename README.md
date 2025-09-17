@@ -188,3 +188,151 @@ The application is organized into modular components:
 5. **CLI Mode**: Command-line interface for automation
    - Interactive shell with commands like `connect`, `select`, etc.
    - Useful for scripting and headless environments
+
+## Installation
+
+### Option 1: Install from Source (Recommended)
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/SilverLucFox/Loula_SqLite_Viewer.git
+   cd Loula_SqLite_Viewer
+   ```
+
+2. **Install the package:**
+
+   ```bash
+   # Install in development mode (recommended for development)
+   pip install -e .
+
+   # Or install normally
+   pip install .
+   ```
+
+3. **Run the application:**
+   ```bash
+   sqlite-viewer
+   # or
+   loula-sqlite
+   ```
+
+### Option 2: Install from PyPI (when available)
+
+```bash
+pip install loula-sqlite-viewer
+sqlite-viewer
+```
+
+### Option 3: Create Standalone Executable
+
+1. **Install build dependencies:**
+
+   ```bash
+   pip install pyinstaller build
+   ```
+
+2. **Build the executable:**
+
+   ```bash
+   python build_app.py
+   # Choose option 1 for executable only
+   ```
+
+3. **Run the executable:**
+
+   ```bash
+   # On Windows
+   dist/sqlite-viewer.exe
+
+   # On Linux/macOS
+   dist/sqlite-viewer
+   ```
+
+## Development Setup
+
+1. **Clone and install in development mode:**
+
+   ```bash
+   git clone https://github.com/SilverLucFox/Loula_SqLite_Viewer.git
+   cd Loula_SqLite_Viewer
+   pip install -e ".[dev]"
+   ```
+
+2. **Run tests:**
+
+   ```bash
+   pytest
+   ```
+
+3. **Code formatting:**
+   ```bash
+   black src/
+   flake8 src/
+   ```
+
+## Building Distributions
+
+### Create Python Wheel and Source Distribution
+
+```bash
+# Install build tools
+pip install build twine
+
+# Build distributions
+python -m build
+
+# Upload to PyPI (optional)
+twine upload dist/*
+```
+
+### Create Standalone Executable
+
+```bash
+# Install PyInstaller
+pip install pyinstaller
+
+# Run build script
+python build_app.py
+```
+
+## System Requirements
+
+- **Python**: 3.6 or higher
+- **Operating System**: Windows, Linux, or macOS
+- **Dependencies**:
+  - `windows-curses` (automatically installed on Windows)
+  - Standard library modules: `sqlite3`, `json`, `os`, `curses`
+
+## Distribution
+
+The application can be distributed as:
+
+1. **Python Package**: Installable via pip
+2. **Standalone Executable**: Single file executable (no Python installation required)
+3. **Source Distribution**: For manual installation
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"curses module not found" on Windows:**
+
+   ```bash
+   pip install windows-curses
+   ```
+
+2. **Permission denied when running executable:**
+
+   - On Linux/macOS: `chmod +x dist/sqlite-viewer`
+   - On Windows: Run as administrator or check antivirus
+
+3. **Import errors:**
+   - Ensure you're running from the correct directory
+   - Try reinstalling: `pip install -e .`
+
+### Getting Help
+
+- Check the [Issues](https://github.com/SilverLucFox/Loula_SqLite_Viewer/issues) page
+- Review the README for usage instructions
+- Test with the CLI mode if TUI has issues: `python -c "from src.core.cli import SQLiteCLI; cli = SQLiteCLI(); cli.cmdloop()"`

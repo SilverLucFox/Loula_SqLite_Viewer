@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loula-sqlite-viewer"
+version = "2.2.3"
+description = "A professional console-based SQLite database viewer and editor with enhanced TUI interface"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.6"
+authors = [
+    {name = "SilverFox", email = "jawadc444@gmail.com"},
+]
+maintainers = [
+    {name = "SilverFox", email = "jawadc444@gmail.com"},
+]
+keywords = ["sqlite", "database", "viewer", "editor", "tui", "cli", "terminal"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "windows-curses>=2.3.0; sys_platform == 'win32'",
+]
+
+[project.urls]
+Homepage = "https://github.com/SilverLucFox/Loula_SqLite_Viewer"
+Repository = "https://github.com/SilverLucFox/Loula_SqLite_Viewer.git"
+Issues = "https://github.com/SilverLucFox/Loula_SqLite_Viewer/issues"
+Changelog = "https://github.com/SilverLucFox/Loula_SqLite_Viewer/blob/main/README.md"
+
+[project.scripts]
+sqlite-viewer = "src.core.main:main"
+loula-sqlite = "src.core.main:main"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+exclude = ["tests*", "docs*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.md", "*.txt"]

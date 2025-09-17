@@ -145,9 +145,7 @@ class SQLiteTUI:
 
         # Developer note content
         content = [
-            "📖 Developer Note - SilverFox",
-            "",
-            "🎯 Programmer Note - SilverFox",
+            " dev-Note - SilverFox",
             "",
             "About Loula's SQLite Viewer:",
             "A professional console-based SQLite database viewer and editor with an enhanced TUI interface.",
