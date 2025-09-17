@@ -91,8 +91,10 @@ def create_executable():
         "--noconfirm",                  # Don't ask for confirmation
     ]
 
-    if not console:
-        cmd.append("--noconsole")       # Hide console (not used for CLI/TUI apps)
+    # For console applications like SQLite Viewer, we always want to show the console
+    # Remove the --noconsole flag if it exists (though it shouldn't be added with console=True)
+    if "--noconsole" in cmd:
+        cmd.remove("--noconsole")
 
     # Add data files
     data_files = []

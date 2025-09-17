@@ -28,15 +28,18 @@ def can_use_curses():
         return False
 
     # Check for environment variables that indicate non-interactive environments
-    non_interactive_terms = ['dumb', 'unknown', '']
+    non_interactive_terms = ['dumb', 'unknown']
     term = os.environ.get('TERM', '').lower()
     if term in non_interactive_terms:
         return False
 
-    # Check if we're running in certain IDEs or environments
+    # Allow TUI mode if TERM is not set or is a common terminal type
+    # Only block TUI if we're in known problematic IDEs
     if os.environ.get('PYCHARM_HOSTED') or os.environ.get('VSCODE_PID'):
         return False
 
+    # If we get here, try TUI mode - it's better to try and fail gracefully
+    # than to always fall back to CLI
     return True
 
 from src.ui.tui import SQLiteTUI
