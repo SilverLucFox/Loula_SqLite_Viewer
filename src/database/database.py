@@ -67,18 +67,21 @@ class DatabaseManager:
         except sqlite3.Error:
             return []
 
-    def execute_sql(self, sql):
+    def execute_sql(self, sql, params=None):
         """Execute a SQL statement"""
         if not self.connection:
             return "No database connected"
         try:
             cursor = self.connection.cursor()
-            cursor.execute(sql)
+            if params:
+                cursor.execute(sql, params)
+            else:
+                cursor.execute(sql)
             if sql.strip().upper().startswith('SELECT'):
                 rows = cursor.fetchall()
                 return rows
             else:
                 self.connection.commit()
-                return "Executed successfully"
+                return cursor.rowcount
         except sqlite3.Error as e:
             return f"Error: {e}"
