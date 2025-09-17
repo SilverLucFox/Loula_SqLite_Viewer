@@ -137,6 +137,104 @@ class SQLiteTUI:
             elif key == ord('q'):
                 break
 
+    def read_me_screen(self, stdscr):
+        """Display the Read Me/Developer Note screen"""
+        h, w = stdscr.getmaxyx()
+        stdscr.clear()
+        self.ui.draw_main_title(stdscr)
+
+        # Developer note content
+        content = [
+            "📖 Developer Note - SilverFox",
+            "",
+            "🎯 Programmer Note - SilverFox",
+            "",
+            "About Loula's SQLite Viewer:",
+            "A professional console-based SQLite database viewer and editor with an enhanced TUI interface.",
+            "",
+            "Features:",
+            "• Professional TUI Interface - Navigate with arrow keys, just like Linux task managers (htop)",
+            "• Color-coded Display - Easy to read interface with visual feedback",
+            "• Database Management - Save multiple databases with custom colors",
+            "• Menu-driven Navigation - No need to remember commands",
+            "• Connect to SQLite databases - Save database path and name for quick reconnection",
+            "• Browse Tables and Schemas - View table structures and data",
+            "• Execute SQL Commands - Full SQL support for queries and modifications",
+            "• Advanced Tools - Insert, Update, Delete records and manage table structures",
+            "• Split-Screen Table Browser - Professional layout with pagination",
+            "• Robust Error Handling - Professional-grade reliability",
+            "",
+            "Interface:",
+            "• Arrow Keys: Navigate menu options",
+            "• Enter: Select option",
+            "• 'q': Quit application",
+            "• 'b' or Escape: Go back to previous menu",
+            "",
+            "Main Menu Options:",
+            "• Connect to Database - Connect to ANY SQLite database file",
+            "• Browse Tables - Split-screen interface to browse tables and contents",
+            "• Execute SQL - Run custom SQL queries",
+            "• Tools - Access advanced database tools (Insert, Update, Delete, Create Table, etc.)",
+            "• Read Me - View developer information and project details",
+            "• Disconnect - Close current database connection",
+            "• Quit - Exit the application",
+            "",
+            "Technical Stack:",
+            "• Python 3.6+",
+            "• curses library for TUI (windows-curses for Windows)",
+            "• SQLite3 for database operations",
+            "• JSON for configuration persistence",
+            "• Modular architecture with separate UI, core, database, config, and tools layers",
+            "• Cross-platform compatibility (Windows, Linux, macOS)",
+            "",
+            "Project Structure:",
+            "• Core Module - Main entry point and CLI interface",
+            "• Database Module - SQLite database operations",
+            "• UI Module - Text User Interface components",
+            "• Config Module - Configuration and persistence",
+            "• Tools Module - SQL and utility tools",
+            "",
+            "Version: 2.2.3",
+            "Developer: SilverFox",
+            "Date: September 2025",
+            "Latest Update: Enhanced TUI interface with split-screen table browser",
+            "",
+            "Built with ❤️ for professional database management and development!"
+        ]
+
+        # Display content with scrolling if needed
+        max_lines = h - 4  # Leave space for title and instructions
+        start_line = 0
+
+        while True:
+            stdscr.clear()
+            self.ui.draw_main_title(stdscr)
+
+            # Display visible portion of content
+            for i in range(max_lines):
+                if start_line + i < len(content):
+                    line = content[start_line + i]
+                    # Truncate line if too long for screen
+                    if len(line) > w - 4:
+                        line = line[:w - 7] + "..."
+                    stdscr.addstr(2 + i, 2, line, curses.color_pair(5))
+
+            # Navigation instructions
+            if len(content) > max_lines:
+                stdscr.addstr(h - 2, 2, "Use ↑↓ to scroll, 'q' to quit", curses.color_pair(6))
+            else:
+                stdscr.addstr(h - 2, 2, "Press 'q' to return to main menu", curses.color_pair(6))
+
+            stdscr.refresh()
+            key = stdscr.getch()
+
+            if key == curses.KEY_UP and start_line > 0:
+                start_line -= 1
+            elif key == curses.KEY_DOWN and start_line < len(content) - max_lines:
+                start_line += 1
+            elif key == ord('q'):
+                break
+
     def main_loop(self, stdscr):
         """Main TUI loop"""
         # Initialize colors
@@ -156,7 +254,8 @@ class SQLiteTUI:
             "Connect to Database",
             "Browse Tables",
             "Execute SQL",
-            "Tools (not working)",
+            "Tools",
+            "Read Me",
             "Disconnect",
             "Quit"
         ]
@@ -180,9 +279,11 @@ class SQLiteTUI:
                         self.sql_input_screen(stdscr)
                     elif self.selected_option == 3:  # Tools
                         self.tools_menu(stdscr)
-                    elif self.selected_option == 4:  # Disconnect
+                    elif self.selected_option == 4:  # Read Me
+                        self.read_me_screen(stdscr)
+                    elif self.selected_option == 5:  # Disconnect
                         self.db.disconnect()
-                    elif self.selected_option == 5:  # Quit
+                    elif self.selected_option == 6:  # Quit
                         break
                 elif key == ord('q'):
                     break
